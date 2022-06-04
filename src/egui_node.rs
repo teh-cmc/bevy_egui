@@ -4,12 +4,12 @@ use bevy::{
     render::{
         render_graph::{Node, NodeRunError, RenderGraphContext},
         render_resource::{
-            std140::AsStd140, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
+            encase::ShaderType, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
             BindingType, BlendComponent, BlendFactor, BlendOperation, BlendState, Buffer,
-            BufferAddress, BufferBindingType, BufferDescriptor, BufferSize, BufferUsages,
-            ColorTargetState, ColorWrites, Extent3d, FrontFace, IndexFormat, LoadOp,
-            MultisampleState, Operations, PipelineLayoutDescriptor, PrimitiveState,
-            RawFragmentState, RawRenderPipelineDescriptor, RawVertexBufferLayout, RawVertexState,
+            BufferAddress, BufferBindingType, BufferDescriptor, BufferUsages, ColorTargetState,
+            ColorWrites, Extent3d, FrontFace, IndexFormat, LoadOp, MultisampleState, Operations,
+            PipelineLayoutDescriptor, PrimitiveState, RawFragmentState,
+            RawRenderPipelineDescriptor, RawVertexBufferLayout, RawVertexState,
             RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, SamplerBindingType,
             ShaderModuleDescriptor, ShaderSource, ShaderStages, TextureDimension, TextureFormat,
             TextureSampleType, TextureViewDimension, VertexAttribute, VertexFormat, VertexStepMode,
@@ -52,9 +52,7 @@ impl FromWorld for EguiPipeline {
                     ty: BindingType::Buffer {
                         ty: BufferBindingType::Uniform,
                         has_dynamic_offset: true,
-                        min_binding_size: Some(
-                            BufferSize::new(EguiTransform::std140_size_static() as u64).unwrap(),
-                        ),
+                        min_binding_size: Some(EguiTransform::min_size()),
                     },
                     count: None,
                 }],
@@ -324,8 +322,17 @@ impl Node for EguiNode {
 
         let egui_transforms = world.get_resource::<EguiTransforms>().unwrap();
 
-        let extracted_window =
-            &world.get_resource::<ExtractedWindows>().unwrap().windows[&self.window_id];
+        let extracted_window = if let Some(window) = world
+            .get_resource::<ExtractedWindows>()
+            .unwrap()
+            .windows
+            .get(&self.window_id)
+        {
+            window
+        } else {
+            return Ok(());
+        };
+
         let swap_chain_texture = extracted_window.swap_chain_texture.as_ref().unwrap();
 
         let mut render_pass =

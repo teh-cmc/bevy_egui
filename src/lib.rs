@@ -601,15 +601,10 @@ impl Default for RenderGraphConfig {
 /// so you'll only need to manually call this if you want to use multiple windows.
 pub fn setup_pipeline(render_graph: &mut RenderGraph, config: RenderGraphConfig) {
     render_graph.add_node(config.egui_pass, EguiNode::new(config.window_id));
-
-    render_graph
-        .add_node_edge(
-            bevy::core_pipeline::node::MAIN_PASS_DRIVER,
-            config.egui_pass,
-        )
-        .unwrap();
-
-    let _ = render_graph.add_node_edge("ui_pass_driver", config.egui_pass);
+    let _ = render_graph.add_node_edge(
+        bevy::render::main_graph::node::CAMERA_DRIVER,
+        config.egui_pass,
+    );
 }
 
 #[cfg(test)]
